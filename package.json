@@ -1,0 +1,24 @@
+{
+  "name": "library_backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index",
+    "prod": "node index"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EsraaHamada100/library_backend.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/EsraaHamada100/library_backend/issues"
+  },
+  "homepage": "https://github.com/EsraaHamada100/library_backend#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "nodemon": "^2.0.22"
+  }
+}
