@@ -1,7 +1,7 @@
 const router = require('express').Router();
 // const adminAuth = require('../middleware/admin');
 const connection = require('../database/connection');
-
+const formidable = require('formidable');
 
 // Get request => get all movies
 router.get("/", (req, res) => {
@@ -11,19 +11,34 @@ router.get("/", (req, res) => {
 });
 // Post request => save a new book
 router.post("/", (req, res) => {
-    const data = req.body;
+    const form = new formidable.IncomingForm();
+    form.parse(req, (err, fields, files) => {
+        if (err) {
+            console.log(err);
+            return res.end('Error parsing form data.');
+        }
+        console.log(fields); // form fields
+        console.log(files); // uploaded files
+    });
+    // res.end('Form submitted successfully!');
+    // const data = req.body;
+    // console.log(req.body);
+
     // INSERT INTO tableName SET column1 = 'value1', column2 = 'value2';
     // he uses this way here
     connection.query("insert into books set ?",
         {
-            book_name: data.book_name,
-            description: data.description,
-            author: data.author, field: data.field,
-            publication_data: data.publication_data,
-            cover_link: data.cover_link,
-            pdf_file: data.pdf_file,
+            book_name: fields.book_name,
+            description: fields.description,
+            author: fields.author,
+            field: fields.field,
+            publication_date: fields.publication_date,
+            cover_link: fields.cover_link,
+            pdf_file: files.pdf_file,
         },
         (err, result) => {
+            console.log(err, result);
+
             if (err) {
                 result.statusCode = 500;
                 res.send({
