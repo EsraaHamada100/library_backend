@@ -27,7 +27,8 @@ router.get("/", (req, res) => {
     if (conditions.length > 0) {
         whereClause = `WHERE ${conditions.join(' AND ')}`;
     }
-    connection.query(`select * from books ${whereClause}`, (err, result, fields) => {
+    connection.query(`select books.*, chapters.chapter_title, chapters.description from books INNER JOIN chapters
+    ON books.book_id = chapters.book_id ${whereClause} GROUP BY books.book_id`, (err, result, fields) => {
         res.send(result);
     });
 });

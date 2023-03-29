@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const app = express();
 
 const books = require('./routes/books.js');
+const chapters = require('./routes/chapters.js');
 const users = require('./routes/users.js');
 const search_terms = require('./routes/search_terms.js');
 
@@ -15,8 +16,10 @@ app.use(bodyParser.json());
 // here the string is refers to the parent route
 // it's the route that repeats in all request
 app.use("/books", books);
+app.use("/chapters", chapters);
 app.use("/users", users);
 app.use("/search_terms", search_terms);
+
 
 app.listen(4000, 'localhost', () => {
     console.log("SERVER IS RUNNING");
