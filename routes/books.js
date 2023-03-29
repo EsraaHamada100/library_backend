@@ -1,3 +1,4 @@
+
 const router = require('express').Router();
 // const adminAuth = require('../middleware/admin');
 const connection = require('../database/connection');
@@ -27,18 +28,34 @@ router.get("/", (req, res) => {
     if (conditions.length > 0) {
         whereClause = `WHERE ${conditions.join(' AND ')}`;
     }
-    connection.query(`select books.*, chapters.chapter_title, chapters.description from books INNER JOIN chapters
-    ON books.book_id = chapters.book_id ${whereClause} GROUP BY books.book_id`, (err, result, fields) => {
-        res.send(result);
-    });
+
+    // replaces any quotation marks in the chapter title and description
+    //  with escaped quotes (this is to avoid invalid JSON syntax).
+    connection.query(`select books.*,  CONCAT('[', GROUP_CONCAT(
+        CONCAT('{ "title": "', REPLACE(chapters.chapter_title, '"', '\\"'), 
+               '", "description": "', REPLACE(chapters.description, '"', '\\"'), '" }')), ']'
+    ) AS chapters
+    FROM books
+    LEFT JOIN chapters ON books.book_id = chapters.book_id ${whereClause} GROUP BY books.book_id`,
+        (err, result, fields) => {
+            result.map((book) => book['chapters'] = JSON.parse(book['chapters']))
+            res.send(result);
+        });
 });
 
 // Get a specific book 
 router.get("/:id", (req, res) => {
     const { id } = req.params;
-    const query = 'SELECT * FROM books WHERE ?';
-    connection.query(query, { book_id: id }, (err, result, fields) => {
-        if (result[0]) {
+    const query = `select books.*,  CONCAT('[', GROUP_CONCAT(
+        CONCAT('{ "title": "', REPLACE(chapters.chapter_title, '"', '\\"'), 
+               '", "description": "', REPLACE(chapters.description, '"', '\\"'), '" }')), ']'
+    ) AS chapters
+    FROM books
+    LEFT JOIN chapters ON books.book_id = chapters.book_id  WHERE books.book_id=?`;
+    connection.query(query, id,  (err, result) => {
+        if (result[0] && result[0].book_id != null) {
+            // to convert a stringList to json data
+            result[0].chapters = JSON.parse(result[0].chapters);
             res.json(result[0]);
         } else {
             res.statusCode = 404;
@@ -134,7 +151,7 @@ router.put("/:id", (req, res) => {
     let columns = [];
 
     connection.query("update books set ? where book_id = ?",
-        [{ book_name: data.book_name, description: data.description, author: data.author, field: data.field, publication_date: data.publication_date, cover_link: data.cover_link, }, id], 
+        [{ book_name: data.book_name, description: data.description, author: data.author, field: data.field, publication_date: data.publication_date, cover_link: data.cover_link, }, id],
         (err, result) => {
             if (err) {
                 console.log(err);
@@ -150,7 +167,7 @@ router.put("/:id", (req, res) => {
         });
 });
 
-// Delete request => delete a movie
+// Delete request => delete a book
 router.delete("/:id", (req, res) => {
     const { id } = req.params;
     connection.query("delete from books where ?", { book_id: id }, (err, result) => {
@@ -158,11 +175,11 @@ router.delete("/:id", (req, res) => {
             console.log(err);
             res.statusCode = 500;
             res.json({
-                message: "Failed to delete the movie",
+                message: "Failed to delete the book",
             });
         }
         res.json({
-            message: "Movie deleted successfully"
+            message: "book deleted successfully"
         })
     });
 });
