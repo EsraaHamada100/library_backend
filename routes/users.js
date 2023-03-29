@@ -10,6 +10,21 @@ router.get("/", (req, res) => {
   });
 });
 
+// Get request => get a specific user
+router.get("/:id", (req, res) => {
+  const { id } = req.params;
+  connection.query("SELECT * FROM users WHERE ?", { user_id : id }, (err, result, fields) => {
+      if (result[0]) {
+          res.json(result[0]);
+      } else {
+          res.statusCode = 404;
+          res.json({
+              message: "User not found !",
+          });
+      }
+  });
+});
+
 // Post request => save a new user
 router.post("/", (req, res) => {
   const data = req.body;
@@ -26,6 +41,7 @@ router.post("/", (req, res) => {
       },
       (err, result) => {
           if (err) {
+            console.log(err);
               result.statusCode = 500;
               res.send({
                   message: "Failed to save the user"
@@ -40,29 +56,13 @@ router.post("/", (req, res) => {
 
 });
 
-// Get request => get a specific movie
-router.get("/:id", (req, res) => {
-  const { id } = req.params;
-  // you can also use :
-  // "select * from movie where id=?",{id}
-  connection.query("select * from users where ?", { id: id }, (err, result, fields) => {
-      // if there is no result this will return undefined which means false
-      if (result[0]) {
-          res.json(result[0]);
-      } else {
-          res.statusCode = 404;
-          res.json({
-              message: "User not found",
-          });
-      }
-  });
-});
+
 
 // Put request => modify a specific movie
 router.put("/:id", (req, res) => {
   const { id } = req.params;
   const data = req.body;
-  connection.query("update users set ? where id = ?",
+  connection.query("update users set ? where user_id = ?",
       [{ user_id: data.user_id,
         email: data.email,
         password: data.password,
@@ -71,13 +71,14 @@ router.put("/:id", (req, res) => {
         type: data.type,
          }, id], (err, result) => {
           if (err) {
+              console.log(err);
               res.statusCode = 505;
               res.json({
-                  message: "Failed to update the user"
+                  message: "Failed to update the user !"
               });
           } else {
               res.json({
-                  message: "User updated successfully"
+                  message: "User updated successfully !"
               });
           }
       });
@@ -86,15 +87,16 @@ router.put("/:id", (req, res) => {
 // Delete request => delete a movie
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
-  connection.query("delete from users where ?", { id: id }, (err, result) => {
+  connection.query("delete from users where ?", { user_id: id }, (err, result) => {
       if (err) {
+          console.log(err);
           res.statusCode = 500;
           res.json({
-              message: "Failed to delete the user",
+              message: "Failed to delete the user!",
           });
       }
       res.json({
-          message: "user deleted successfully"
+          message: "user deleted successfully!"
       })
   });
 });
