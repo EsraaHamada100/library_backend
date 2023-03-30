@@ -8,7 +8,7 @@ const connection = require('../database/connection');
 // Get request => search for books or get them
 
 router.get("/", (req, res) => {
-    console.log(req.query.author);
+    // console.log(req.query.author);
     let conditions = [];
     // making sure that he specify an author in the parameters
     if (req.query.author && req.query.author.trim != '') {
