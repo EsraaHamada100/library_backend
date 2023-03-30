@@ -2,12 +2,29 @@
 const router = require('express').Router();
 const connection = require('../database/connection');
 
+// get chapters according to book id or get all chapters
+router.get('/', function (req, res) {
+    let whereClause;
+    if (req.query.book_id && req.query.book_id.trim != '') {
+        whereClause = `WHERE book_id= ${req.query.book_id}`;
+    }
+    connection.query(`SELECT * from chapters ${whereClause}`, (err, result) => {
+        res.send(result);
+    });
+});
 
-// Get request => get all chapters of specific book
+// Get request => get a specific chapter
 router.get("/:id", (req, res) => {
     const { id } = req.params;
-    connection.query("select * from chapters where ?", { book_id: id }, (err, result, fields) => {
-        res.send(result);
+    connection.query("select * from chapters where ?", { chapter_id: id }, (err, result, fields) => {
+        if (result[0]) {
+            res.send(result[0]);
+        } else {
+            res.statusCode = 404;
+            res.json({
+                "message": "Chapter not found"
+            });
+        }
     });
 });
 
@@ -34,56 +51,39 @@ router.post("/", (req, res) => {
 
 });
 
-// Get request => get a specific movie
-router.get("/:id", (req, res) => {
-    const { id } = req.params;
-    // you can also use :
-    // "select * from movie where id=?",{id}
-    connection.query("select * from movie where ?", { id: id }, (err, result, fields) => {
-        // if there is no result this will return undefined which means false
-        if (result[0]) {
-            res.json(result[0]);
-        } else {
-            res.statusCode = 404;
-            res.json({
-                message: "Movie not found",
-            });
-        }
-    });
-});
-;
 
-// Put request => modify a specific movie
+
+// Put request => modify a specific chapter
 router.put("/:id", (req, res) => {
     const { id } = req.params;
     const data = req.body;
-    connection.query("update movies set ? where id = ?",
-        [{ name: data.name, description: data.description }, id], (err, result) => {
+    connection.query("update chapters set ? where chapter_id = ?",
+        [{ chapter_title: data.chapter_title, description: data.description }, id], (err, result) => {
             if (err) {
                 res.statusCode = 505;
                 res.json({
-                    message: "Failed to update the movie"
+                    message: "Failed to update chapter data"
                 });
             } else {
                 res.json({
-                    message: "Movie updated successfully"
+                    message: "Chapter updated successfully"
                 });
             }
         });
 });
 
-// Delete request => delete a movie
+// Delete request => delete a chapter
 router.delete("/:id", (req, res) => {
     const { id } = req.params;
-    connection.query("delete from movies where ?", { id: id }, (err, result) => {
+    connection.query("delete from chapters where ?", { chapter_id: id }, (err, result) => {
         if (err) {
             res.statusCode = 500;
             res.json({
-                message: "failed to delete the movie",
+                message: "Failed to delete the chapter",
             });
         }
         res.json({
-            message: "Movie deleted successfully"
+            message: "Chapter deleted successfully"
         })
     });
 });

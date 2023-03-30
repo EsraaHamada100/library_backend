@@ -1,10 +1,8 @@
+
 const router = require('express').Router();
 // const adminAuth = require('../middleware/admin');
 const connection = require('../database/connection');
-const formidable = require('formidable');
-const { PassThrough } = require('stream');
-const PDFDocument = require('pdfkit');
-const fs = require('fs');
+
 
 
 // Get request => search for books or get them
@@ -27,18 +25,34 @@ router.get("/", (req, res) => {
     if (conditions.length > 0) {
         whereClause = `WHERE ${conditions.join(' AND ')}`;
     }
-    connection.query(`select books.*, chapters.chapter_title, chapters.description from books INNER JOIN chapters
-    ON books.book_id = chapters.book_id ${whereClause} GROUP BY books.book_id`, (err, result, fields) => {
-        res.send(result);
-    });
+
+    // replaces any quotation marks in the chapter title and description
+    //  with escaped quotes (this is to avoid invalid JSON syntax).
+    connection.query(`select books.*,  CONCAT('[', GROUP_CONCAT(
+        CONCAT('{ "title": "', REPLACE(chapters.chapter_title, '"', '\\"'), 
+               '", "description": "', REPLACE(chapters.description, '"', '\\"'), '" }')), ']'
+    ) AS chapters
+    FROM books
+    LEFT JOIN chapters ON books.book_id = chapters.book_id ${whereClause} GROUP BY books.book_id`,
+        (err, result, fields) => {
+            result.map((book) => book['chapters'] = JSON.parse(book['chapters']))
+            res.send(result);
+        });
 });
 
 // Get a specific book 
 router.get("/:id", (req, res) => {
     const { id } = req.params;
-    const query = 'SELECT * FROM books WHERE ?';
-    connection.query(query, { book_id: id }, (err, result, fields) => {
-        if (result[0]) {
+    const query = `select books.*,  CONCAT('[', GROUP_CONCAT(
+        CONCAT('{ "title": "', REPLACE(chapters.chapter_title, '"', '\\"'), 
+               '", "description": "', REPLACE(chapters.description, '"', '\\"'), '" }')), ']'
+    ) AS chapters
+    FROM books
+    LEFT JOIN chapters ON books.book_id = chapters.book_id  WHERE books.book_id=?`;
+    connection.query(query, id, (err, result) => {
+        if (result[0] && result[0].book_id != null) {
+            // to convert a stringList to json data
+            result[0].chapters = JSON.parse(result[0].chapters);
             res.json(result[0]);
         } else {
             res.statusCode = 404;
@@ -51,90 +65,47 @@ router.get("/:id", (req, res) => {
 
 // Post request => save a new book
 router.post("/", (req, res) => {
-    const form = new formidable.IncomingForm();
-    form.parse(req, (err, fields, files) => {
-        // the  error happens when we try to parse the form data
-        if (err) {
-            console.log(err);
-            return res.end('Error parsing form data.');
-        }
-        console.log(files);
+    const data = req.body;
 
-        connection.query("insert into books set ?",
-            {
-                book_name: fields.book_name,
-                description: fields.description,
-                author: fields.author,
-                field: fields.field,
-                publication_date: fields.publication_date,
-                cover_link: fields.cover_link,
-                pdf_file: files.pdf_file,
-            },
+    connection.query("insert into books set ?",
+        {
+            book_name: data.book_name,
+            description: data.description,
+            author: data.author,
+            field: data.field,
+            publication_date: data.publication_date,
+            cover_link: data.cover_link,
+            pdf_file: data.pdf_file,
+        },
 
-            (err, result) => {
-                console.log(err, result);
+        (err, result) => {
+            console.log(err, result);
 
-                if (err) {
-                    result.statusCode = 500;
-                    res.send({
-                        message: "Failed to save the book"
-                    })
+            if (err) {
+                result.statusCode = 500;
+                res.send({
+                    message: "Failed to save the book"
+                })
 
-                } else {
-                    res.json({
-                        message: "book created !"
-                    })
-                }
-            },
-        );
+            } else {
+                res.json({
+                    message: "book created !"
+                })
+            }
+        },
+    );
 
-    });
-});
-
-// Get request => get a specific book pdf 
-// TODO implementing that latter
-router.get("/download_file/:id", (req, res) => {
-    const { id } = req.params;
-    const query = 'SELECT pdf_file FROM books WHERE book_id = ?';
-    connection.query(query, [id], (error, results) => {
-        if (error || results.length == 0) {
-            console.log(error);
-            return res.status(404).send('File not found.');
-        }
-
-        const blobFile = results[0].blob_data;
-
-        const reader = new FileReader();
-        reader.onload = () => {
-            const text = reader.result;
-
-            // Create a new PDF document
-            const doc = new PDFDocument();
-
-            // Convert the text to PDF and add it to the document
-            doc.text(text);
-
-            // Save the PDF to a file
-            const writeStream = fs.createWriteStream('output.pdf');
-            doc.pipe(writeStream);
-            doc.end();
-            writeStream.on('finish', () => {
-                console.log('PDF created successfully!');
-            });
-        };
-        reader.readAsText(blobFile);
-    });
 });
 
 
-// Put request => modify a specific movie
+// Put request => modify a specific book
 router.put("/:id", (req, res) => {
     const { id } = req.params;
     const data = req.body;
     let columns = [];
 
     connection.query("update books set ? where book_id = ?",
-        [{ book_name: data.book_name, description: data.description, author: data.author, field: data.field, publication_date: data.publication_date, cover_link: data.cover_link, }, id], 
+        [{ book_name: data.book_name, description: data.description, author: data.author, field: data.field, publication_date: data.publication_date, cover_link: data.cover_link, }, id],
         (err, result) => {
             if (err) {
                 console.log(err);
@@ -150,7 +121,8 @@ router.put("/:id", (req, res) => {
         });
 });
 
-// Delete request => delete a movie
+
+// Delete request => delete a book
 router.delete("/:id", (req, res) => {
     const { id } = req.params;
     connection.query("delete from books where ?", { book_id: id }, (err, result) => {
@@ -158,11 +130,11 @@ router.delete("/:id", (req, res) => {
             console.log(err);
             res.statusCode = 500;
             res.json({
-                message: "Failed to delete the movie",
+                message: "Failed to delete the book",
             });
         }
         res.json({
-            message: "Movie deleted successfully"
+            message: "book deleted successfully"
         })
     });
 });
