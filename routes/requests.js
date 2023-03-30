@@ -2,9 +2,9 @@ const router = require('express').Router();
 // const adminAuth = require('../middleware/admin');
 const connection = require('../database/connection');
 
-// Get request => get all search_terms
+// Get request => get all users
 router.get("/", (req, res) => {
-  connection.query("select * from search_terms", (err, result, fields) => {
+  connection.query("select * from requests", (err, result, fields) => {
       res.send(result);
       console.log(result);
   });
@@ -13,13 +13,13 @@ router.get("/", (req, res) => {
 // Get request => get a specific user
 router.get("/:id", (req, res) => {
   const { id } = req.params;
-  connection.query("SELECT * FROM search_terms WHERE ?", { search_id : id }, (err, result, fields) => {
+  connection.query("SELECT * FROM requests WHERE ?", { request_id : id }, (err, result, fields) => {
       if (result[0]) {
           res.json(result[0]);
       } else {
           res.statusCode = 404;
           res.json({
-              message: "search not found !",
+              message: "request not found !",
           });
       }
   });
@@ -28,24 +28,26 @@ router.get("/:id", (req, res) => {
 // Post request => save a new user
 router.post("/", (req, res) => {
   const data = req.body;
-  connection.query("insert into search_terms set ?",
+  // INSERT INTO tableName SET column1 = 'value1', column2 = 'value2';
+  // he uses this way here
+  connection.query("insert into requests set ?",
       {
-        search_id: data.search_id,
-        user_id: data.user_id,
-        search_word	: data.search_word,
-        search_date: data.search_date,
+          request_id: data.request_id	,
+          user_id: data.user_id,
+          book_id: data.book_id,
+          approval_state: data.approval_state,
       },
       (err, result) => {
           if (err) {
             console.log(err);
               result.statusCode = 500;
               res.send({
-                  message: "not found !"
+                  message: "Failed to save the request"
               })
 
           } else {
               res.json({
-                  message: "added successfully"
+                  message: "request added successfully!"
               })
           }
       });
@@ -58,22 +60,22 @@ router.post("/", (req, res) => {
 router.put("/:id", (req, res) => {
   const { id } = req.params;
   const data = req.body;
-  connection.query("update search_terms set ? where search_id = ?",
+  connection.query("update requests set ? where request_id = ?",
       [{ 
-        search_id: data.search_id,
-        user_id: data.user_id,
-        search_word	: data.search_word,
-        search_date: data.search_date,
+          request_id: data.request_id	,
+          user_id: data.user_id,
+          book_id: data.book_id,
+          approval_state: data.approval_state,
          }, id], (err, result) => {
           if (err) {
               console.log(err);
               res.statusCode = 505;
               res.json({
-                  message: "Failed to update !"
+                  message: "Failed to update the request !"
               });
           } else {
               res.json({
-                  message: "updated successfully !"
+                  message: "request updated successfully !"
               });
           }
       });
@@ -82,23 +84,21 @@ router.put("/:id", (req, res) => {
 // Delete request => delete a movie
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
-  connection.query("delete from search_terms where ?", { search_id: id }, (err, result) => {
+  connection.query("delete from requests where ?", { request_id	: id }, (err, result) => {
       if (err) {
           console.log(err);
           res.statusCode = 500;
           res.json({
-              message: "Failed to delete the search!",
+              message: "Failed to delete the request!",
           });
       }
       res.json({
-          message: "search deleted successfully!"
+          message: "request deleted successfully!"
       })
   });
 });
 
 module.exports = router;
-
-
 
 
 
