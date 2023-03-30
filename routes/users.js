@@ -33,6 +33,7 @@ router.post("/", (req, res) => {
   connection.query("insert into users set ?",
       {
           user_id: data.user_id,
+          name : data.name,
           email: data.email,
           password: data.password,
           phone: data.phone,
@@ -64,6 +65,7 @@ router.put("/:id", (req, res) => {
   const data = req.body;
   connection.query("update users set ? where user_id = ?",
       [{ user_id: data.user_id,
+        name : data.name,
         email: data.email,
         password: data.password,
         phone: data.phone,
