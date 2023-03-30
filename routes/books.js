@@ -2,22 +2,24 @@ const router = require("express").Router();
 // const adminAuth = require('../middleware/admin');
 const connection = require("../database/connection");
 
+
 // Get request => search for books or get them
 
 router.get("/", (req, res) => {
-  // console.log(req.query.author);
-  let conditions = [];
-  // making sure that he specify an author in the parameters
-  if (req.query.author && req.query.author.trim != "") {
-    conditions.push(`author='${req.query.author}'`);
-  }
-  if (req.query.field && req.query.field.trim != "") {
-    conditions.push(`field='${req.query.field}'`);
-  }
-  if (req.query.book_name && req.query.book_name.trim != "") {
-    conditions.push(`book_name='${req.query.book_name}'`);
-  }
-  let whereClause = "";
+
+    // console.log(req.query.author);
+    let conditions = [];
+    // making sure that he specify an author in the parameters
+    if (req.query.author && req.query.author.trim != '') {
+        conditions.push(`author='${req.query.author}'`);
+    }
+    if (req.query.field && req.query.field.trim != '') {
+        conditions.push(`field='${req.query.field}'`);
+    }
+    if (req.query.book_name && req.query.book_name.trim != '') {
+        conditions.push(`book_name='${req.query.book_name}'`);
+    }
+    let whereClause = '';
 
   if (conditions.length > 0) {
     whereClause = `WHERE ${conditions.join(" AND ")}`;
