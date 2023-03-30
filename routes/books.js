@@ -4,7 +4,6 @@ const router = require('express').Router();
 const connection = require('../database/connection');
 
 
-
 // Get request => search for books or get them
 
 router.get("/", (req, res) => {
