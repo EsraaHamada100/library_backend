@@ -14,12 +14,17 @@ router.get("/", (req, res) => {
   if (req.query.email && req.query.email.trim != "") {
     conditions.push(`email='${req.query.email}'`);
   }
-  let whereClause = '';
+  let whereClause = "";
 
-    if (conditions.length > 0) {
-        whereClause = `WHERE ${conditions.join(' AND ')}`;
+  if (conditions.length > 0) {
+    whereClause = `WHERE ${conditions.join(" AND ")}`;
+  }
+  connection.query(
+    `select*from users ${whereClause}` ,   (err, result, fields) => {
+      res.send(result);
     }
-  });
+  )
+});
 
 // router.get("/", (req, res) => {
 //     connection.query("select * from users", (err, result, fields) => {
@@ -56,7 +61,6 @@ router.post("/", (req, res) => {
   connection.query(
     "insert into users set ?",
     {
-      user_id: data.user_id,
       name: data.name,
       email: data.email,
       password: `${salt}&${hash}`,
@@ -66,11 +70,17 @@ router.post("/", (req, res) => {
     },
     (err, result) => {
       if (err) {
-        console.log(err);
-        result.statusCode = 500;
+        if (err.sqlMessage.includes("Duplicate")){
+          res.statusCode=409  //conflict
+          res.send({
+            message: "The email address is already registered."
+          })
+        }else{
+        res.statusCode = 500;
         res.send({
           message: "Failed to save the user",
         });
+      }
       } else {
         res.json({
           message: "User added successfully!",
@@ -88,7 +98,10 @@ router.post("/login", function (req, res) {
     data.email,
     (err, result) => {
       if (result[0]) {
-        const { salt, hash } = result[0].password.split("&");
+        const passwodData = result[0].password.split("&");
+        const salt = passwodData[0];
+        const hash = passwodData[1];
+        console.log(passwodData);
         const isMatch = verifyPassword(data.password, salt, hash);
         if (isMatch) {
           res.send({
@@ -116,7 +129,6 @@ router.put("/:id", (req, res) => {
     "update users set ? where user_id = ?",
     [
       {
-        user_id: data.user_id,
         name: data.name,
         email: data.email,
         password: data.password,
@@ -179,4 +191,3 @@ function verifyPassword(password, salt, hash) {
 }
 
 module.exports = router;
-
