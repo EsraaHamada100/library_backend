@@ -2,10 +2,13 @@
 const router = require('express').Router();
 const connection = require('../database/connection');
 
+const adminAuth = require('../middleware/admin_auth');
+const auth = require('../middleware/auth');
+
 // get chapters according to book id or get all chapters
-router.get('/', function (req, res) {
+router.get('/', auth,  (req, res)=> {
     let whereClause;
-    if (req.query.book_id && req.query.book_id.trim != '') {
+    if (req.query.book_id && req.query.book_id.trim() != '') {
         whereClause = `WHERE book_id= ${req.query.book_id}`;
     }
     connection.query(`SELECT * from chapters ${whereClause}`, (err, result) => {
@@ -14,7 +17,7 @@ router.get('/', function (req, res) {
 });
 
 // Get request => get a specific chapter
-router.get("/:id", (req, res) => {
+router.get("/:id", auth, (req, res) => {
     const { id } = req.params;
     connection.query("select * from chapters where ?", { chapter_id: id }, (err, result, fields) => {
         if (result[0]) {
@@ -30,7 +33,7 @@ router.get("/:id", (req, res) => {
 
 
 // Post request => add a chapter
-router.post("/", (req, res) => {
+router.post("/", adminAuth, (req, res) => {
     const data = req.body;
 
     connection.query("insert into chapters set ?",
@@ -54,7 +57,7 @@ router.post("/", (req, res) => {
 
 
 // Put request => modify a specific chapter
-router.put("/:id", (req, res) => {
+router.put("/:id",adminAuth, (req, res) => {
     const { id } = req.params;
     const data = req.body;
     connection.query("update chapters set ? where chapter_id = ?",
@@ -73,7 +76,7 @@ router.put("/:id", (req, res) => {
 });
 
 // Delete request => delete a chapter
-router.delete("/:id", (req, res) => {
+router.delete("/:id", adminAuth, (req, res) => {
     const { id } = req.params;
     connection.query("delete from chapters where ?", { chapter_id: id }, (err, result) => {
         if (err) {

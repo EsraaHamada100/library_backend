@@ -1,25 +1,28 @@
 const router = require("express").Router();
-// const adminAuth = require('../middleware/admin');
 const connection = require("../database/connection");
 
+// middleware
+const adminAuth = require("../middleware/admin_auth");
+const auth = require("../middleware/auth");
 
-// Get request => search for books or get them
 
-router.get("/", (req, res) => {
+// Get request => search for books or get them (user & admin)
 
-    // console.log(req.query.author);
-    let conditions = [];
-    // making sure that he specify an author in the parameters
-    if (req.query.author && req.query.author.trim != '') {
-        conditions.push(`author='${req.query.author}'`);
-    }
-    if (req.query.field && req.query.field.trim != '') {
-        conditions.push(`field='${req.query.field}'`);
-    }
-    if (req.query.book_name && req.query.book_name.trim != '') {
-        conditions.push(`book_name='${req.query.book_name}'`);
-    }
-    let whereClause = '';
+router.get("/",auth, (req, res) => {
+
+  // console.log(req.query.author);
+  let conditions = [];
+  // making sure that he specify an author in the parameters
+  if (req.query.author && req.query.author.trim() != '') {
+    conditions.push(`author='${req.query.author}'`);
+  }
+  if (req.query.field && req.query.field.trim() != '') {
+    conditions.push(`field='${req.query.field}'`);
+  }
+  if (req.query.book_name && req.query.book_name.trim() != '') {
+    conditions.push(`book_name='${req.query.book_name}'`);
+  }
+  let whereClause = '';
 
   if (conditions.length > 0) {
     whereClause = `WHERE ${conditions.join(" AND ")}`;
@@ -42,7 +45,7 @@ router.get("/", (req, res) => {
 });
 
 // Get a specific book
-router.get("/:id", (req, res) => {
+router.get("/:id", auth, (req, res) => {
   const { id } = req.params;
   const query = `select books.*,  CONCAT('[', GROUP_CONCAT(
         CONCAT('{ "title": "', REPLACE(chapters.chapter_title, '"', '\\"'), 
@@ -65,7 +68,7 @@ router.get("/:id", (req, res) => {
 });
 
 // Post request => save a new book
-router.post("/", (req, res) => {
+router.post("/", adminAuth,  (req, res) => {
   const data = req.body;
 
   connection.query(
@@ -84,7 +87,7 @@ router.post("/", (req, res) => {
       console.log(err, result);
 
       if (err) {
-        result.statusCode = 500;
+        res.statusCode = 500;
         res.send({
           message: "Failed to save the book",
         });
@@ -98,7 +101,7 @@ router.post("/", (req, res) => {
 });
 
 // Put request => modify a specific book
-router.put("/:id", (req, res) => {
+router.put("/:id",adminAuth, (req, res) => {
   const { id } = req.params;
   const data = req.body;
   let columns = [];
@@ -133,7 +136,7 @@ router.put("/:id", (req, res) => {
 });
 
 // Delete request => delete a book
-router.delete("/:id", (req, res) => {
+router.delete("/:id",adminAuth, (req, res) => {
   const { id } = req.params;
   connection.query(
     "delete from books where ?",
