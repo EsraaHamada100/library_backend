@@ -26,7 +26,8 @@ router.get('/logout', (req, res) => {
 });
 
 // Get request => get all users
-router.get("/", adminAuth, (req, res) => {
+// TODO add adminAuth
+router.get("/",  (req, res) => {
   console.log(req.query.name);
   let conditions = [];
   // making sure that he specify an name in the parameters
