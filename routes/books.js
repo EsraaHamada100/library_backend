@@ -7,8 +7,8 @@ const auth = require("../middleware/auth");
 
 
 // Get request => search for books or get them (user & admin)
-
-router.get("/",auth, (req, res) => {
+//TODO add auth
+router.get("/", (req, res) => {
 
   // console.log(req.query.author);
   let conditions = [];

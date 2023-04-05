@@ -5,6 +5,9 @@ const app = express();
 
 const session = require('express-session');
 
+// to solve  Server is not configured to allow requests from your origin. error
+const cors = require('cors');
+
 const books = require('./routes/books.js');
 const chapters = require('./routes/chapters.js');
 const users = require('./routes/users.js');
@@ -24,6 +27,7 @@ app.use(session({
     resave: false,
     saveUninitialized: true
   }));
+  app.use(cors());
 // here the string is refers to the parent route
 // it's the route that repeats in all request
 app.use("/books", books);
