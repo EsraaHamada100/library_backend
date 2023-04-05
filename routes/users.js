@@ -3,7 +3,7 @@ const router = require("express").Router();
 const connection = require("../database/connection");
 const crypto = require("crypto");
 
-// Get request => get all users
+// Get request => search for users or get them
 router.get("/", (req, res) => {
   console.log(req.query.name);
   let conditions = [];
