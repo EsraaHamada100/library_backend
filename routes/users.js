@@ -1,21 +1,31 @@
 const router = require("express").Router();
-// const adminAuth = require('../middleware/admin');
 const connection = require("../database/connection");
-const crypto = require("crypto");
 
 const auth = require("../middleware/auth");
 const adminAuth = require("../middleware/admin_auth");
+const { hashPassword, verifyPassword, authenticateUser, getUserData } = require("../helper/user_functions");
 
+//! check login
+router.get('/check-login', async (req, res) => {
 
-router.get('/check-login', (req, res) => {
-  console.log(req.session);
-  if (req.session.user) {
-    res.send({ message: 'user is currently logged in' });
-  } else {
-    res.send({ message: 'No user is currently logged in' });
+  try {
+
+    if (req.session.user) {
+      // getting the user data to send it with the response
+      const email = req.session.user;
+      const userData = await getUserData(email);
+      res.send({ message: 'user is currently logged in', data: userData });
+    } else {
+      res.statusCode = 401;
+      res.send({ message: 'No user is currently logged in' });
+    }
+  } catch (error) {
+    res.statusCode = 500;
+    res.send({ message: 'Server Error' });
   }
 });
-// Route handler for logging out
+
+//! Route handler for logging out
 router.get('/logout', (req, res) => {
   // Destroy the session
   req.session.destroy();
@@ -25,9 +35,9 @@ router.get('/logout', (req, res) => {
   });
 });
 
-// Get request => get all users
+//! Get request => get all users
 // TODO add adminAuth
-router.get("/",  (req, res) => {
+router.get("/", (req, res) => {
   console.log(req.query.name);
   let conditions = [];
   // making sure that he specify an name in the parameters
@@ -49,14 +59,8 @@ router.get("/",  (req, res) => {
   )
 });
 
-// router.get("/", (req, res) => {
-//     connection.query("select * from users", (err, result, fields) => {
-//         res.send(result);
-//         console.log(result);
-//     });
-// });
 
-// Get request => get a specific user
+//! Get request => get a specific user
 router.get("/:id", adminAuth, (req, res) => {
   const { id } = req.params;
   connection.query(
@@ -75,7 +79,7 @@ router.get("/:id", adminAuth, (req, res) => {
   );
 });
 
-// Post request => save a new user
+//! Post request => save a new user
 router.post("/", (req, res) => {
   const data = req.body;
   // INSERT INTO tableName SET column1 = 'value1', column2 = 'value2';
@@ -115,136 +119,34 @@ router.post("/", (req, res) => {
       }
     );
 });
-// Post request => change active state
 
-// Post request => Login
-// router.post("/login", auth, function (req, res) {
-//   const data = req.body;
-//   console.log(req.body);
-//   connection.query(
-//     "SELECT * FROM users WHERE email= ?",
-//     data.email,
-//     (err, result) => {
-//       if (result[0]) {
-//         const passwordData = result[0].password.split("&");
-//         const salt = passwordData[0];
-//         const hash = passwordData[1];
-//         console.log(passwordData);
-//         const isMatch = verifyPassword(data.password, salt, hash);
-//         if (isMatch) {
-//           res.send({
-//             message: "You have been logged in successfully",
-//           });
-//         } else {
-//           res.statusCode = 401;
-//           res.send({
-//             message: "Invalid email or password",
-//           });
-//         }
-//       } else {
-//         res.statusCode = 404;
-//         res.send("This email doesn't exist, you can sign up first");
-//       }
-//     }
-//   );
-// });
-
+//! login a user
 router.post('/login', async (req, res) => {
   // Authenticate user credentials
-  const isAuthenticated = await authenticateUser(req.body.email, req.body.password);
-  if (isAuthenticated) {
-    // Create a new session for the user
-    req.session.user = req.body.email;
-
-
-  } else {
-    res.statusCode = 400;
-    res.send({ message: 'Invalid username or password' });
+  const email = req.body.email;
+  const password = req.body.password;
+  console.log( req.body.email,req.body.password);
+  try {
+    const isAuthenticated = await authenticateUser(email, password);
+    if (isAuthenticated) {
+      // Create a new session for the user
+      req.session.user = email;
+      const userData = await getUserData(email);
+      res.send({ message: 'Logged in successfully!', data: userData });
+    } else {
+      res.statusCode = 400;
+      res.send({ message: 'Invalid username or password' });
+    }
+  } catch (err) {
+    console.log(err);
+    res.statusCode = 500;
+    res.send({ message: ` Server error ` });
   }
 });
 
-function getUserData(email){
-    
-    // return  the user data
-    connection.query("SELECT * FROM users WHERE email= ?", req.body.email,
-      (err, result) => {
-        if (err) {
-          // res.statusCode = 500;
-          // res.send({
-          //   message: "Server error"
-          // });
-          return {};
-        }
-        const user = result[0];
-        return {
-          message: 'Login successfully',
-          data: {
-            'user_id': user.user_id,
-            'email': user.email,
-            'phone': user.phone,
-            'type': user.type,
-          }
-        };
 
-      });
-}
 
-// function authenticateUser(email, password) {
-//   connection.query(
-//     "SELECT * FROM users WHERE email= ?",
-//     email,
-//     (err, result) => {
-//       if (err) {
-//         console.log('an error accure');
-//         return false;
-//       }
-//       if (result[0]) {
-//         const passwordData = result[0].password.split("&");
-//         const salt = passwordData[0];
-//         const hash = passwordData[1];
-//         console.log(passwordData);
-//         const isMatch = verifyPassword(password, salt, hash);
-//         if (isMatch) {
-//           console.log('he is a valid user');
-//           return true;
-//         }else {
-//           console.log('the password is incorrect');
-//           return false;
-//         }
-//       }
-//     });
-
-// }
-
-function authenticateUser(email, password) {
-  // I made that to use await
-  return new Promise((resolve, reject) => {
-    connection.query(
-      "SELECT * FROM users WHERE email= ?",
-      email,
-      (err, result) => {
-        if (err) {
-          console.log('an error accure');
-          reject(new Error('An error occurred while authenticating user'));
-        }
-        if (result[0]) {
-          const passwordData = result[0].password.split("&");
-          const salt = passwordData[0];
-          const hash = passwordData[1];
-          console.log(passwordData);
-          const isMatch = verifyPassword(password, salt, hash);
-          if (isMatch) {
-            console.log('he is a valid user');
-            resolve(true);
-          } else {
-            console.log('the password is incorrect');
-            resolve(false);
-          }
-        }
-      });
-  });
-}
-// Put request => modify a specific user
+//! Put request => modify a specific user
 router.put("/:id", auth, (req, res) => {
   const { id } = req.params;
   const data = req.body;
@@ -277,7 +179,7 @@ router.put("/:id", auth, (req, res) => {
   );
 });
 
-// Delete request => delete a user
+//! Delete request => delete a user
 router.delete("/:id", adminAuth, (req, res) => {
   const { id } = req.params;
   connection.query(
@@ -298,19 +200,6 @@ router.delete("/:id", adminAuth, (req, res) => {
   );
 });
 
-function hashPassword(password) {
-  const salt = crypto.randomBytes(16).toString("hex");
-  const hash = crypto
-    .pbkdf2Sync(password, salt, 1000, 64, "sha256")
-    .toString("hex");
-  return { salt, hash };
-}
 
-function verifyPassword(password, salt, hash) {
-  const computedHash = crypto
-    .pbkdf2Sync(password, salt, 1000, 64, "sha256")
-    .toString("hex");
-  return computedHash === hash;
-}
 
 module.exports = router;
