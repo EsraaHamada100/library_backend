@@ -3,27 +3,8 @@ const connection = require("../database/connection");
 
 const auth = require("../middleware/auth");
 const adminAuth = require("../middleware/admin_auth");
-const { hashPassword, verifyPassword, authenticateUser, getUserData } = require("../helper/user_functions");
+const { hashPassword, verifyPassword, authenticateUser, getUserDataByEmail, getUserDataById} = require("../helper/user_functions");
 
-//! check login
-router.get('/check-login', async (req, res) => {
-
-  try {
-
-    if (req.session.user) {
-      // getting the user data to send it with the response
-      const email = req.session.user;
-      const userData = await getUserData(email);
-      res.send({ message: 'user is currently logged in', data: userData });
-    } else {
-      res.statusCode = 401;
-      res.send({ message: 'No user is currently logged in' });
-    }
-  } catch (error) {
-    res.statusCode = 500;
-    res.send({ message: 'Server Error' });
-  }
-});
 
 //! Route handler for logging out
 router.get('/logout', (req, res) => {
@@ -44,7 +25,7 @@ router.get("/", (req, res) => {
   if (req.query.name && req.query.name.trim() != "") {
     conditions.push(`name='${req.query.name}'`);
   }
-  
+
   if (req.query.email && req.query.email.trim() != "") {
     conditions.push(`email='${req.query.email}'`);
   }
@@ -132,8 +113,14 @@ router.post('/login', async (req, res) => {
     if (isAuthenticated) {
       // Create a new session for the user
       req.session.user = email;
-      const userData = await getUserData(email);
-      res.send({ message: 'Logged in successfully!', data: userData });
+      const userData = await getUserDataByEmail(email);
+      if(userData.active){
+        res.send({ message: 'Logged in successfully!', data: userData });
+      }else{
+        res.statusCode = 401;
+        res.send({message: "User account pending verification by administrator. Please try again later."});
+      }
+
     } else {
       res.statusCode = 400;
       res.send({ message: 'Invalid username or password' });
@@ -151,16 +138,26 @@ router.post('/login', async (req, res) => {
 router.put("/:id", auth, (req, res) => {
   const { id } = req.params;
   const data = req.body;
+  try {
+    const userData = getUserDataById(id);
+
+  } catch (error) {
+    res.statusCode = 505;
+    res.json({
+      message: "Failed to update the user !",
+    });
+    return;
+  }
   connection.query(
     "update users set ? where user_id = ?",
     [
       {
-        name: data.name,
-        email: data.email,
-        password: data.password,
-        phone: data.phone,
-        active: data.active,
-        type: data.type,
+        name: data.name || userData.name,
+        email: data.email || userData.email,
+        password: data.password || userData.password,
+        phone: data.phone || userData.phone,
+        active: data.active || userData.active,
+        type: data.type || userData.type,
       },
       id,
     ],

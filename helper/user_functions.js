@@ -54,7 +54,7 @@ function authenticateUser(email, password) {
     });
 }
 
-function getUserData(email) {
+function getUserDataByEmail(email) {
     return new Promise((resolve, reject) => {
 
         // return  the user data
@@ -77,9 +77,25 @@ function getUserData(email) {
     });
 }
 
+function getUserDataById(id) {
+    return new Promise((resolve, reject) => {
+
+        // return  the user data
+        connection.query("SELECT  * FROM users WHERE email= ?", email,
+            (err, result) => {
+                if (err) {
+                    console.log(err);
+                    reject(new Error('An error occurred while getting user data'));
+                }
+                const user = result[0];
+                return resolve(user);
+            });
+    });
+}
+
 module.exports = {
     hashPassword,
     verifyPassword,
     authenticateUser,
-    getUserData,
-  };
+    getUserData: getUserDataByEmail,
+};
