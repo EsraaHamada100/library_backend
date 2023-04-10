@@ -44,6 +44,7 @@ router.get("/", (req, res) => {
   if (req.query.name && req.query.name.trim() != "") {
     conditions.push(`name='${req.query.name}'`);
   }
+  
   if (req.query.email && req.query.email.trim() != "") {
     conditions.push(`email='${req.query.email}'`);
   }
