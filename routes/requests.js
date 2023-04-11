@@ -13,7 +13,9 @@ router.get("/", auth, (req, res) => {
     if (req.query.user_id && req.query.user_id != '') {
         conditions.push(`user_id='${req.query.user_id}'`);
     }
-
+    if(req.query.book_id && req.query.book_id != '') {
+        conditions.push(`book_id='${req.query.book_id}'`);
+    }
     let whereClause = '';
 
     if (conditions.length > 0) {
@@ -63,10 +65,18 @@ router.post("/",  auth, (req, res) => {
         (err, result) => {
             if (err) {
                 console.log(err);
-                res.statusCode = 500;
-                res.send({
-                    message: "Failed to save the request"
-                })
+                if (err.code === "ER_DUP_ENTRY") {
+                    // Handle duplicate entry error
+                    res.statusCode = 400;
+                    res.send({
+                      message: "Request already exists"
+                    });
+                  } else {
+                    res.statusCode = 500;
+                    res.send({
+                      message: "Failed to save the request"
+                    });
+                  }
 
             } else {
                 res.json({

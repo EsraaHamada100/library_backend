@@ -97,5 +97,6 @@ module.exports = {
     hashPassword,
     verifyPassword,
     authenticateUser,
-    getUserData: getUserDataByEmail,
+    getUserDataByEmail,
+    getUserDataById,
 };

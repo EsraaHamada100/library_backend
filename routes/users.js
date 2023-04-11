@@ -16,6 +16,7 @@ router.get('/logout', (req, res) => {
   });
 });
 
+
 //! Get request => get all users
 // TODO add adminAuth
 router.get("/", (req, res) => {
@@ -112,7 +113,6 @@ router.post('/login', async (req, res) => {
     const isAuthenticated = await authenticateUser(email, password);
     if (isAuthenticated) {
       // Create a new session for the user
-      req.session.user = email;
       const userData = await getUserDataByEmail(email);
       if(userData.active){
         res.send({ message: 'Logged in successfully!', data: userData });
