@@ -8,7 +8,7 @@ const auth = require('../middleware/auth');
 router.get("/", auth, (req, res) => {
     let whereClause = '';
     if (req.query.user_id && req.query.user_id.trim() != '') {
-        whereClause = `where user_id=${req.query.user_id}`;
+        whereClause = `where user_id = ${req.query.user_id} `;
     }
     connection.query(`select * from search_terms ${whereClause}`, (err, result, fields) => {
         if (err) {
