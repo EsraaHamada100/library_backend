@@ -14,7 +14,7 @@ router.get("/", auth, (req, res) => {
         conditions.push(`user_id='${req.query.user_id}'`);
     }
     if (req.query.book_id && req.query.book_id != '') {
-        conditions.push(`book_id='${req.query.book_id}'`);
+        conditions.push(`requests.book_id='${req.query.book_id}'`);
     }
     let whereClause = '';
 

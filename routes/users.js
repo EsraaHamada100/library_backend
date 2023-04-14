@@ -18,8 +18,7 @@ router.get('/logout', (req, res) => {
 
 
 //! Get request => get all users
-// TODO add adminAuth
-router.get("/", (req, res) => {
+router.get("/", adminAuth, (req, res) => {
   console.log(req.query.name);
   let conditions = [];
   // making sure that he specify an name in the parameters
@@ -135,7 +134,7 @@ router.post('/login', async (req, res) => {
 
 
 //! Put request => modify a specific user
-router.put("/:id", auth, (req, res) => {
+router.put("/:id", adminAuth, (req, res) => {
   const { id } = req.params;
   const data = req.body;
   try {

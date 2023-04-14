@@ -4,11 +4,58 @@ const connection = require("../database/connection");
 // middleware
 const adminAuth = require("../middleware/admin_auth");
 const auth = require("../middleware/auth");
+// Get request => get all authors but distinct
+router.get("/authors", auth, (req, res) => {
+
+
+  // replaces any quotation marks in the chapter title and description
+  //  with escaped quotes (this is to avoid invalid JSON syntax).
+  connection.query(
+    `SELECT DISTINCT author FROM books`,
+    (err, result, fields) => {
+      if (err) {
+        res.statusCode = 500;
+        res.send({
+          message: "Failed get authors",
+        });
+      } 
+      // to get all authors as a list
+      const authors = result.map(authorMap => authorMap.author);
+
+      console.log(result);
+      res.send({'authors': authors});
+    }
+  );
+});
+
+
+// Get request => get all authors but fields but distinct
+router.get("/fields", auth, (req, res) => {
+
+
+  // replaces any quotation marks in the chapter title and description
+  //  with escaped quotes (this is to avoid invalid JSON syntax).
+  connection.query(
+    `SELECT DISTINCT field FROM books`,
+    (err, result, _) => {
+      if (err) {
+        res.statusCode = 500;
+        res.send({
+          message: "Failed get fields",
+        });
+      } 
+      // to get all fields as a list
+      const fields = result.map(fieldMap => fieldMap.field);
+
+      console.log(result);
+      res.send({'fields': fields});
+    }
+  );
+});
 
 
 // Get request => search for books or get them (user & admin)
-//TODO add auth
-router.get("/", (req, res) => {
+router.get("/", auth, (req, res) => {
 
   // console.log(req.query.author);
   let conditions = [];
@@ -19,8 +66,9 @@ router.get("/", (req, res) => {
   if (req.query.field && req.query.field.trim() != '') {
     conditions.push(`field='${req.query.field}'`);
   }
+  // here I will return the book if it's contain this word
   if (req.query.book_name && req.query.book_name.trim() != '') {
-    conditions.push(`book_name='${req.query.book_name}'`);
+    conditions.push(`book_name LIKE '%${req.query.book_name}%'`);
   }
   let whereClause = '';
 
@@ -68,7 +116,7 @@ router.get("/:id", auth, (req, res) => {
 });
 
 // Post request => save a new book
-router.post("/", adminAuth,  (req, res) => {
+router.post("/", adminAuth, (req, res) => {
   const data = req.body;
 
   connection.query(
@@ -101,7 +149,7 @@ router.post("/", adminAuth,  (req, res) => {
 });
 
 // Put request => modify a specific book
-router.put("/:id",adminAuth, (req, res) => {
+router.put("/:id", adminAuth, (req, res) => {
   const { id } = req.params;
   const data = req.body;
   let columns = [];
@@ -136,7 +184,7 @@ router.put("/:id",adminAuth, (req, res) => {
 });
 
 // Delete request => delete a book
-router.delete("/:id",adminAuth, (req, res) => {
+router.delete("/:id", adminAuth, (req, res) => {
   const { id } = req.params;
   connection.query(
     "delete from books where ?",
@@ -155,5 +203,7 @@ router.delete("/:id",adminAuth, (req, res) => {
     }
   );
 });
+
+
 
 module.exports = router;
