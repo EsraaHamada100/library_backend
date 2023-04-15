@@ -137,8 +137,9 @@ router.post('/login', async (req, res) => {
 router.put("/:id", adminAuth, (req, res) => {
   const { id } = req.params;
   const data = req.body;
+  let userData;
   try {
-    const userData = getUserDataById(id);
+    userData = getUserDataById(id);
 
   } catch (error) {
     res.statusCode = 505;

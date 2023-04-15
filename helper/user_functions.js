@@ -81,7 +81,7 @@ function getUserDataById(id) {
     return new Promise((resolve, reject) => {
 
         // return  the user data
-        connection.query("SELECT  * FROM users WHERE email= ?", email,
+        connection.query("SELECT  * FROM users WHERE user_id= ?", id,
             (err, result) => {
                 if (err) {
                     console.log(err);
