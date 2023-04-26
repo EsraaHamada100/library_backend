@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const connection = require('../database/connection');
+const getRequestById = require('../helper/request_functions');
 
 // authentications
 const auth = require('../middleware/auth');
@@ -100,10 +101,7 @@ router.put("/:id", auth, (req, res) => {
     const data = req.body;
     connection.query("update requests set ? where request_id = ?",
         [{
-            request_id: data.request_id,
-            user_id: data.user_id,
-            book_id: data.book_id,
-            approval_state: data.approval_state,
+            approval_state: data.approval_state ,
         }, id], (err, result) => {
             if (err) {
                 console.log(err);
