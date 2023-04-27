@@ -76,8 +76,8 @@ router.post("/", (req, res) => {
         email: data.email,
         password: `${salt}&${hash}`,
         phone: data.phone,
-        active: data.active ? data.active : 0,
-        type: data.type ? data.type : 'user',
+        active: data.active || 0,
+        type: data.type || 'user',
       },
       (err, result) => {
         if (err) {

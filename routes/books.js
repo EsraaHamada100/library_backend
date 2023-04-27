@@ -79,12 +79,14 @@ router.get("/", auth, (req, res) => {
   // replaces any quotation marks in the chapter title and description
   //  with escaped quotes (this is to avoid invalid JSON syntax).
   connection.query(
-    `select books.*,  CONCAT('[', GROUP_CONCAT(
-        CONCAT('{ "title": "', REPLACE(chapters.chapter_title, '"', '\\"'), 
-               '", "description": "', REPLACE(chapters.description, '"', '\\"'), '" }')), ']'
-    ) AS chapters
-    FROM books
-    LEFT JOIN chapters ON books.book_id = chapters.book_id ${whereClause} GROUP BY books.book_id`,
+    `SELECT books.*, CONCAT('[', GROUP_CONCAT(
+      CONCAT('{ "chapter_id": ', chapters.chapter_id, 
+             ', "title": "', REPLACE(chapters.chapter_title, '"', '\\"'), 
+             '", "description": "', REPLACE(chapters.description, '"', '\\"'), '" }')
+  ), ']') AS chapters
+  FROM books
+  LEFT JOIN chapters ON books.book_id = chapters.book_id ${whereClause}
+  GROUP BY books.book_id;`,
     (err, result, fields) => {
       result.map((book) => (book["chapters"] = JSON.parse(book["chapters"])));
       res.send(result);
@@ -95,12 +97,22 @@ router.get("/", auth, (req, res) => {
 // Get a specific book
 router.get("/:id", auth, (req, res) => {
   const { id } = req.params;
-  const query = `select books.*,  CONCAT('[', GROUP_CONCAT(
-        CONCAT('{ "title": "', REPLACE(chapters.chapter_title, '"', '\\"'), 
-               '", "description": "', REPLACE(chapters.description, '"', '\\"'), '" }')), ']'
+  // const query = `select books.*,  CONCAT('[', GROUP_CONCAT(
+  //       CONCAT('{ "title": "', REPLACE(chapters.chapter_title, '"', '\\"'), 
+  //              '", "description": "', REPLACE(chapters.description, '"', '\\"'), '" }')), ']'
+  //   ) AS chapters
+  //   FROM books
+  //   LEFT JOIN chapters ON books.book_id = chapters.book_id  WHERE books.book_id=?`;
+  const query = `
+    SELECT books.*, CONCAT('[', GROUP_CONCAT(
+        CONCAT('{ "chapter_id": ', chapters.chapter_id, 
+               ', "title": "', REPLACE(chapters.chapter_title, '"', '\\"'), 
+               '", "description": "', REPLACE(chapters.description, '"', '\\"'), '" }')
+        ), ']'
     ) AS chapters
     FROM books
-    LEFT JOIN chapters ON books.book_id = chapters.book_id  WHERE books.book_id=?`;
+    LEFT JOIN chapters ON books.book_id = chapters.book_id  
+    WHERE books.book_id=?`;
   connection.query(query, id, (err, result) => {
     if (result[0] && result[0].book_id != null) {
       // to convert a stringList to json data
