@@ -1,6 +1,5 @@
 const router = require('express').Router();
 const connection = require('../database/connection');
-const getRequestById = require('../helper/request_functions');
 
 // authentications
 const auth = require('../middleware/auth');
