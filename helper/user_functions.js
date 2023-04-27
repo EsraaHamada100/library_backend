@@ -22,6 +22,7 @@ function authenticateUser(email, password) {
         reject(new Error('undefined values'));
 
     }
+  
     // I made that to use await
     return new Promise((resolve, reject) => {
         connection.query(
@@ -93,6 +94,7 @@ function getUserDataById(id) {
     });
 }
 
+
 module.exports = {
     hashPassword,
     verifyPassword,
@@ -100,3 +102,7 @@ module.exports = {
     getUserDataByEmail,
     getUserDataById,
 };
+
+
+
+
